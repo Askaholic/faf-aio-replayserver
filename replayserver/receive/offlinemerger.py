@@ -117,6 +117,7 @@ class DataMerger:
 class OfflineReplayMerger:
     def __init__(self, merger):
         self._merger = merger
+        self._replays = []
 
     @classmethod
     def build(cls):
@@ -124,6 +125,7 @@ class OfflineReplayMerger:
 
     def add_replay(self, replay):
         data = replay.data.bytes()
+        self._replays.append(replay)
         if data == b"":
             return
 
@@ -134,4 +136,4 @@ class OfflineReplayMerger:
         self._merger.add_data(data, replay)
 
     def get_best_replay(self):
-        return self._merger.get_best_data()
+        return self._replays

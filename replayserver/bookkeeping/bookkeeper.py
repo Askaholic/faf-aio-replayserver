@@ -26,10 +26,16 @@ class Bookkeeper:
         saver = ReplaySaver.build(queries, config)
         return cls(queries, saver)
 
-    async def save_replay(self, game_id, stream):
+    async def save_replay(self, game_id, streams):
         try:
             logger.debug(f"Saving replay {game_id}")
-            await self._saver.save_replay(game_id, stream)
+            for i, r in enumerate(streams):
+                if r is None:
+                    continue
+                try:
+                    await self._saver.save_replay(game_id, i, r)
+                except BookkeepingError:
+                    pass
             logger.debug(f"Saved replay {game_id}")
             metrics.saved_replays.inc()
         except BookkeepingError as e:

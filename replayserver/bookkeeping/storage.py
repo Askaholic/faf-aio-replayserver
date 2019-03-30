@@ -16,10 +16,10 @@ class ReplayFilePaths:
     def build(cls, config_replay_store_path):
         return cls(config_replay_store_path)
 
-    def get(self, game_id):
+    def get(self, game_id, suffix):
         rpath = self._replay_path(game_id)
         os.makedirs(rpath, exist_ok=True)
-        rfile = os.path.join(rpath, f"{str(game_id)}.fafreplay")
+        rfile = os.path.join(rpath, f"{str(game_id)}_{suffix}.fafreplay")
         if os.path.exists(rfile):
             raise BookkeepingError(f"Replay file {rfile} already exists")
         open(rfile, 'a').close()    # Touch file
@@ -47,11 +47,11 @@ class ReplaySaver:
         paths = ReplayFilePaths.build(config.vault_path)
         return cls(paths, database)
 
-    async def save_replay(self, game_id, stream):
+    async def save_replay(self, game_id, suffix, stream):
         if stream.header is None:
             raise BookkeepingError("Saved replay has no header")
         info = await self._get_replay_info(game_id, stream.header.struct)
-        rfile = self._paths.get(game_id)
+        rfile = self._paths.get(game_id, suffix)
         try:
             with open(rfile, "wb") as f:
                 await self._write_replay_in_thread(
