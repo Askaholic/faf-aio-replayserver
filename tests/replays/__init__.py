@@ -2,6 +2,7 @@ from os import path
 import json
 import base64
 import zlib
+import zstandard as zstd
 import copy
 import sys
 
@@ -41,6 +42,14 @@ def unpack_replay(replay):
     head = json.loads(head)
     zipped_part = base64.b64decode(b64_part)[4:]  # First 4 bytes are data size
     raw_replay_data = zlib.decompress(zipped_part)
+    return head, raw_replay_data
+
+
+# Old format, but with zstd compression and no base64.
+def unpack_replay_format_2(replay):
+    head, zipped_part = replay.split(b'\n', 1)
+    head = json.loads(head)
+    raw_replay_data = zstd.ZstdDecompressor().decompress(zipped_part)
     return head, raw_replay_data
 
 

@@ -11,7 +11,12 @@ class BookkeeperConfig(config.Config):
         "vault_path": {
             "doc": "Root directory for saved replays.",
             "parser": config.is_dir
-        }
+        },
+        "zstd_dict": {
+            "doc": "zstd dictionary to use for compression. Can be omitted.",
+            "parser": lambda x: None if x == "" else config.is_file(x),
+            "default": ""   # everett default values must be strings
+        },
     }
 
 

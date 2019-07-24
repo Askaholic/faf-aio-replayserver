@@ -38,6 +38,12 @@ def is_dir(d):
     return d
 
 
+def is_file(f):
+    if not os.path.isfile(f):
+        raise ValueError(f"File {f} does not exist")
+    return f
+
+
 class _ConfigMeta(type):
     def __init__(cls, name, bases, attrs, *args, **kwargs):
         super().__init__(name, bases, attrs, *args, **kwargs)

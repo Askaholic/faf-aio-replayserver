@@ -1,8 +1,6 @@
 import os
 import json
-import base64
-import struct
-import zlib
+import zstandard as zstd
 import asyncio
 
 from replayserver.errors import BookkeepingError
@@ -38,14 +36,20 @@ class ReplayFilePaths:
 
 
 class ReplaySaver:
-    def __init__(self, paths, database):
+    def __init__(self, paths, database, zstd_dict):
         self._paths = paths
         self._database = database
+        if zstd_dict is not None:
+            zstd_dict = open(zstd_dict, "rb").read()
+            self._compressor = zstd.ZstdCompressor(level=10,
+                                                   dict_data=zstd_dict)
+        else:
+            self._compressor = zstd.ZstdCompressor(level=10)
 
     @classmethod
     def build(cls, database, config):
         paths = ReplayFilePaths.build(config.vault_path)
-        return cls(paths, database)
+        return cls(paths, database, config.zstd_dict)
 
     async def save_replay(self, game_id, stream):
         if stream.header is None:
@@ -76,6 +80,9 @@ class ReplaySaver:
         else:
             featured_mods = await self._database.get_mod_versions(game_mod)
         result['featured_mod_versions'] = featured_mods
+
+        result['version'] = 2
+        result['compression'] = 'zstd'
         return result
 
     def _fixup_team_dict(self, d):
@@ -91,8 +98,7 @@ class ReplaySaver:
         try:
             rfile.write(json.dumps(info).encode('UTF-8'))
             rfile.write(b"\n")
-            data = struct.pack(">i", len(data)) + zlib.compress(data)
-            data = base64.b64encode(data)
+            data = self._compressor.compress(data)
             rfile.write(data)
         # json should always produce ascii, but just in case...
         except UnicodeEncodeError:
